@@ -1,0 +1,33 @@
+# Eclipse
+.classpath
+.project
+.settings/
+
+# Intellij
+.idea/
+*.iml
+*.iws
+
+# Vscode
+.metals/
+.vscode/
+
+# Mac
+.DS_Store
+
+# Maven/sbt
+log/
+target/
+project/
+.bsp/
+
+# Spark
+spark-warehouse/
+
+# Custom
+py/
+dist/
+data/
+conf/
+myOut/
+www/
