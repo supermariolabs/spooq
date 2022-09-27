@@ -28,6 +28,7 @@ spark-warehouse/
 py/
 dist/
 data/
-conf/
 myOut/
 www/
+assembly.sh
+assemblyAll.sh

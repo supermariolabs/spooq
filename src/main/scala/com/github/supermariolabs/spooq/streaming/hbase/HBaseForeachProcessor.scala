@@ -1,13 +1,11 @@
 package com.github.supermariolabs.spooq.streaming.hbase
 
+import com.github.supermariolabs.spooq.hbase.HBaseUtils
 import com.github.supermariolabs.spooq.streaming.SimpleForeachProcessor
 import org.apache.hadoop.hbase.TableName
-import org.apache.hadoop.hbase.client.{Connection, ConnectionFactory, Put, Table}
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.spark.sql.{ForeachWriter, Row}
 import org.slf4j.LoggerFactory
-
-import scala.util.{Failure, Success, Try}
 
 class HBaseForeachProcessor(options: Map[String, String] = Map.empty[String, String]) extends SimpleForeachProcessor {
   val logger = LoggerFactory.getLogger(this.getClass)
@@ -34,23 +32,23 @@ class HBaseForeachProcessor(options: Map[String, String] = Map.empty[String, Str
 
   override val processor: ForeachWriter[Row] = new ForeachWriter[Row] {
     override def open(partitionId: Long, epochId: Long): Boolean = {
-      logger.info(s"SampleForeachProcessor::open($partitionId, $epochId)")
+      logger.info(s"HBaseForeachProcessor::open($partitionId, $epochId)")
       true
     }
 
     override def process(row: Row): Unit = {
-      logger.info(s"SampleForeachProcessor::process($row)")
+      logger.info(s"HBaseForeachProcessor::process($row)")
       var rowStr = ""
       row.schema.foreach(field => {
         rowStr += (s", ${field.name} [${field.dataType.sql}] -> ${row.getAs(field.name)}")
       })
       logger.info("Row: " + rowStr.substring(2))
 
-      val table = getConnection.getTable(TableName.valueOf(Bytes.toBytes(tableName)))
+      val table = HBaseUtils.getConnection.getTable(TableName.valueOf(Bytes.toBytes(tableName)))
       sourceShape match {
         case "wide" => {
           row.schema.filter(field => field.name != rowKey).foreach(field => {
-            insert(table,
+            HBaseUtils.insert(table,
               row.getAs[Array[Byte]](rowKey),
               (
                 cf.getBytes,
@@ -61,7 +59,7 @@ class HBaseForeachProcessor(options: Map[String, String] = Map.empty[String, Str
           })
         }
         case "long" => {
-          insert(table,
+          HBaseUtils.insert(table,
             row.getAs[Array[Byte]](rowKey),
             (
               row.getAs[Array[Byte]]("cf"),
@@ -75,29 +73,7 @@ class HBaseForeachProcessor(options: Map[String, String] = Map.empty[String, Str
     }
 
     override def close(errorOrNull: Throwable): Unit = {
-      if (errorOrNull != null) logger.error(s"SampleForeachProcessor::close(${errorOrNull.getMessage})")
+      if (errorOrNull != null) logger.error(s"HBaseForeachProcessor::close(${errorOrNull.getMessage})")
     }
-  }
-
-  def getConnection(): Connection = {
-    Try {
-      val threadLocal: ThreadLocal[Connection] = new ThreadLocal[Connection]();
-      var conn = threadLocal.get
-      if (conn == null || conn.isClosed || conn.isAborted) {
-        conn = ConnectionFactory.createConnection
-        threadLocal.set(conn)
-      }
-      conn
-    } match {
-      case Success(conn) => conn
-      case Failure(f) => ConnectionFactory.createConnection
-    }
-  }
-
-  def insert(table: Table, rowKey: Array[Byte], cells: List[(Array[Byte], Array[Byte], Array[Byte])]): Unit = {
-    val put = new Put(rowKey)
-    cells.foreach(x => put.addColumn(x._1, x._2, x._3))
-
-    table.put(put)
   }
 }
