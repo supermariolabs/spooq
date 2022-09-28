@@ -3,17 +3,18 @@
 ## Table of Contents
 1. [Overview](#overview)
 2. [Getting Started](#gettingstarted)
-3. [How does it work?](#howdoesitwork)
-4. [Stream Processing](#streamprocessing)
-5. [Interactive Mode](#interactivemode)
-6. [Thrift Server (Experimental)](#thriftserver)
-7. [Reference Documentation](#referencedoc)
+3. [Play with the tool using Docker](#docker)
+4. [How does it work?](#howdoesitwork)
+5. [Stream Processing](#streamprocessing)
+6. [Interactive Mode](#interactivemode)
+7. [Thrift Server (Experimental)](#thriftserver)
+8. [Reference Documentation](#referencedoc)
    1. [Configuration Overview](#referencedoc1)
    2. [Steps Kind](#referencedoc2)
    3. [Launch Parameters](#referencedoc3)
-8. [Download](#download)
-9. [How to compile the code](howtocompile)
-10. [Cookbook](#cookbook)
+9. [Download](#download)
+10. [How to compile the code](howtocompile)
+11. [Cookbook](#cookbook)
 
 ## Overview <a id="overview"></a>
 Spooq is an ETL Big Data tool based on the Apache Spark framework that simplifies its use through the ability to implement data pipelines using a declarative approach based on simple configuration files and expressing transformations primarily through SQL.
@@ -137,6 +138,48 @@ steps = [
 Let's launch the tool again using the new configuration:
 ![Asciinema](https://supermariolabs.github.io/spooq/docs/assets/images/spooq3.gif "Spooq: jdbc import 2'")
 [Watch in Asciinema](https://asciinema.org/a/522363)
+
+## Play with the tool using Docker <a id="#docker"></a>
+The best way to start testing the tool is to use the prepackaged Docker image by following these simple steps:
+1. In a folder of your choice create two subfolders named: `conf` and `data`;
+2. Inside the conf folder create a hello.conf file with the following content
+```hocon
+id = "helloWorld"
+desc = "sample 'hello world' job"
+
+steps = [
+{
+    id = hello
+    shortDesc = "execute 'hello world' sql query"
+    kind = sql
+    sql = "select 'hello world!' as message"
+    show = true
+},
+{
+    id = out
+    shortDesc = "sample output"
+    kind = output
+    source = hello
+    format = json
+    mode = overwrite
+    path = /opt/spooq/data/hello.json
+}
+]
+```
+3. Launch the docker image with the following command:
+```bash
+docker run -v $(pwd)/conf:/opt/spooq/conf -v $(pwd)/data:/opt/spooq/data -it mcartia/spooq -c conf/hello.conf
+```
+4. If everything went smoothly you should find the job output in the `data/hello.json/` directory. Congratulations!
+
+**Please note**:
+You can pass any arguments supported by spooq. The application will run locally on a standalone Spark installation embedded in the docker image.
+
+It is possible to load additional dependencies by setting the SPOOQ_PACKAGES environment variable. For example, if we wanted to launch the application by loading the jdbc postgres connector it would be enough to use:
+```bash
+docker run -v $(pwd)/conf:/opt/spooq/conf -v $(pwd)/data:/opt/spooq/data -e SPOOQ_PACKAGES=org.postgresql:postgresql:42.4.0 -it mcartia/spooq -c conf/your.conf
+```
+(to load multiple dependencies just separate them with a comma `,`)
 
 ## How does it work? <a id="howdoesitwork"></a>
 The tool is nothing more than a generic Spark application that can be launched in standalone mode (`master=local[*]` via a fat-jar containing within it the Apache Spark framework and other libraries) or on a cluster via `spark-submit`.

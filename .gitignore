@@ -16,6 +16,7 @@
 .DS_Store
 
 # Maven/sbt
+lib/
 log/
 target/
 project/
@@ -27,6 +28,7 @@ spark-warehouse/
 # Custom
 py/
 dist/
+docker/
 data/
 myOut/
 www/
