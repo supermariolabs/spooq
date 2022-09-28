@@ -139,7 +139,7 @@ Let's launch the tool again using the new configuration:
 ![Asciinema](https://supermariolabs.github.io/spooq/docs/assets/images/spooq3.gif "Spooq: jdbc import 2'")
 [Watch in Asciinema](https://asciinema.org/a/522363)
 
-## Play with the tool using Docker <a id="#docker"></a>
+## Play with the tool using Docker <a id="docker"></a>
 The best way to start testing the tool is to use the prepackaged Docker image by following these simple steps:
 1. In a folder of your choice create two subfolders named: `conf` and `data`;
 2. Inside the conf folder create a hello.conf file with the following content
