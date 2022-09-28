@@ -166,10 +166,12 @@ steps = [
 }
 ]
 ```
+
 3. Launch the docker image with the following command:
 ```bash
 docker run -v $(pwd)/conf:/opt/spooq/conf -v $(pwd)/data:/opt/spooq/data -it mcartia/spooq -c conf/hello.conf
 ```
+
 4. If everything went smoothly you should find the job output in the `data/hello.json/` directory. Congratulations!
 
 **Please note**:
