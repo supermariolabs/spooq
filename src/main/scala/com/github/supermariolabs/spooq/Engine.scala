@@ -9,6 +9,7 @@ import com.github.supermariolabs.spooq.etl.SimpleStep
 import com.github.supermariolabs.spooq.logging.{CommonUtils, SparkUtils}
 import com.github.supermariolabs.spooq.metrics.{LoggerListener, QueryLoggerListener}
 import com.github.supermariolabs.spooq.misc.Utils
+import com.github.supermariolabs.spooq.model.validator.{CustomStepValidator, InputStepValidator, InputStreamStepValidator, OutputStepValidator, OutputStreamStepValidator, ScriptStepValidator, SqlStepValidator, UdfStepValidator, VariableStepValidator}
 import com.github.supermariolabs.spooq.model.{EngineOut, Job, Report, Step}
 import com.github.supermariolabs.spooq.shell.Repl
 import com.github.supermariolabs.spooq.streaming.{SimpleForeachBatchProcessor, SimpleForeachProcessor}
@@ -144,6 +145,8 @@ class Engine(conf: ApplicationConfiguration) {
   }
 
   def processInput(in: Step)(implicit spark: SparkSession): Boolean = {
+    InputStepValidator.validate(in)
+
     var reader = spark.read
     var customFormat: Either[Boolean, String] = Left(false)
     val customFormatVars = scala.collection.mutable.Map[String, String]()
@@ -241,6 +244,8 @@ class Engine(conf: ApplicationConfiguration) {
   }
 
   def processInputStream(in: Step)(implicit spark: SparkSession): Boolean = {
+    InputStreamStepValidator.validate(in)
+
     var reader = spark.readStream
     in.format.foreach(formatDefined =>
       reader = reader.format(formatDefined))
@@ -279,10 +284,12 @@ class Engine(conf: ApplicationConfiguration) {
   }
 
   def processSql(trx: Step)(implicit spark: SparkSession): Boolean = {
+    SqlStepValidator.validate(trx)
+
     var df = spark.emptyDataFrame
     var sqlToProcess = ""
     trx.sql.foreach(sqlDefined => {
-      sqlToProcess = templating.CommonUtils.processString(sqlDefined,variables.asInstanceOf[java.util.Map[String,Any]])
+      sqlToProcess = templating.CommonUtils.processString(sqlDefined, variables.asInstanceOf[java.util.Map[String, Any]])
       logger.info(s"\nExecuting '${ansi.GREEN}${sqlToProcess.toUpperCase()}${ansi.RESET}'")
       df = spark.sql(sqlToProcess)
     })
@@ -297,7 +304,7 @@ class Engine(conf: ApplicationConfiguration) {
     dataFrames.put(trx.id, df)
     df.createOrReplaceTempView(trx.id)
 
-    trx.show.foreach(showDefined =>{
+    trx.show.foreach(showDefined => {
       if (showDefined) logger.info(s"${ansi.CYAN}SAMPLE DATA${ansi.RESET}\n${SparkUtils.dfAsString(df)}")
     })
 
@@ -305,6 +312,8 @@ class Engine(conf: ApplicationConfiguration) {
   }
 
   def processVariable(trx: Step)(implicit spark: SparkSession): Boolean = {
+    VariableStepValidator.validate(trx)
+
     var df = spark.emptyDataFrame
     trx.sql.foreach(sqlDefined => {
       logger.info(s"\nExecuting '${ansi.GREEN}${sqlDefined.toUpperCase()}${ansi.RESET}'")
@@ -330,6 +339,8 @@ class Engine(conf: ApplicationConfiguration) {
   }
 
   def processScript(script: Step)(implicit spark: SparkSession): Boolean = {
+    ScriptStepValidator.validate(script)
+
     val manager = new ScriptEngineManager
     val engineName = script.jsr223Engine.getOrElse("scala")
     val engine = manager.getEngineByName(engineName)
@@ -393,6 +404,8 @@ class Engine(conf: ApplicationConfiguration) {
   }
 
   def processOutput(out: Step)(implicit spark: SparkSession): Boolean = {
+    OutputStepValidator.validate(out)
+
     var df = dataFrames.get(out.source.get).get
 
     out.repartition.foreach(repartitionDefined => {
@@ -424,6 +437,8 @@ class Engine(conf: ApplicationConfiguration) {
   }
 
   def processOutputStream(out: Step)(implicit spark: SparkSession): Boolean = {
+    OutputStreamStepValidator.validate(out)
+
     var options = "-"
     out.options.foreach(o => {
       options = o.map(kv => s"${kv._1} -> ${kv._2}").mkString(", ")
@@ -491,6 +506,8 @@ class Engine(conf: ApplicationConfiguration) {
   }
 
   def processCustom(custom: Step)(implicit spark: SparkSession): Boolean = {
+    CustomStepValidator.validate(custom)
+
     val className = custom.claz.get
     val claz = Class.forName(className).newInstance.asInstanceOf[SimpleStep]
 
@@ -514,6 +531,8 @@ class Engine(conf: ApplicationConfiguration) {
   }
 
   def processUdf(udf: Step)(implicit spark: SparkSession): Boolean = {
+    UdfStepValidator.validate(udf)
+
     val className = udf.claz.get
     val claz = Class.forName(className).newInstance.asInstanceOf[SimpleUDF]
     spark.udf.register(udf.id, claz.udf)
