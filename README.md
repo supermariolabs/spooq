@@ -12,9 +12,10 @@
    1. [Configuration Overview](#referencedoc1)
    2. [Steps Kind](#referencedoc2)
    3. [Launch Parameters](#referencedoc3)
-9. [Download](#download)
-10. [How to compile the code](howtocompile)
-11. [Cookbook](#cookbook)
+9. [Data Quality](#dataquality)
+10. [Download](#download)
+11. [How to compile the code](howtocompile)
+12. [Cookbook](#cookbook)
 
 ## Overview <a id="overview"></a>
 Spooq is an ETL Big Data tool based on the Apache Spark framework that simplifies its use through the ability to implement data pipelines using a declarative approach based on simple configuration files and expressing transformations primarily through SQL.
@@ -725,6 +726,40 @@ The command parameters supported by the application are:
 - `-tp` or `--thrift-port` (**experimental**) allows you to bind the thrift-server to a different port
 - `-v` or `--verbose` verbose mode
 - `-r` or `--rich` whether or not to use the rich ui (ansi) cli
+### Data Quality<a id="dataquality"></a>
+
+Spooq includes [Deequ](https://github.com/awslabs/deequ), a library built on top of Apache Spark for defining "unit tests for data" which measure data quality in large datasets
+
+Use Deequ inside our step is very easy because, for every Step, the user can add "check" subsection to manage:
+ - size _my df must have exactly N rows_
+ - complete, _all values inside the column X must be not null_
+ - unique, _all values inside the column Y must be unique_
+ - contain, _the column Z must contains only 0 and 1_
+
+Example:
+```hocon
+id = "Example configuration file"
+desc = ""
+
+steps = [
+    {
+        id = first_input_step
+        shortDesc = ""
+        kind = input
+        format = jdbc
+        options = {
+            url = "jdbc:mysql://127.0.0.1:3306/db"
+            driver = "com.mysql.cj.jdbc.Driver"
+            dbtable = "db.table"
+            user = ""
+            password = ""
+        }
+        check = {
+            size = 10
+        }
+    }
+]
+```
 
 ## Download <a id="download"></a>
 [Spooq 0.9.9beta Spark3 (scala 2.12)](https://drive.google.com/file/d/1y57-YBmEyfLhxI2Rw4Rh3QOBeLAiOcah/view?usp=sharing)
