@@ -1,7 +1,7 @@
 package com.github.supermariolabs.spooq.model.validator
 
 import org.scalatest.flatspec.AnyFlatSpec
-import com.github.supermariolabs.spooq.model.Step
+import com.github.supermariolabs.spooq.model.{Check, Step}
 import org.scalatest.matchers.should.Matchers
 
 class ValidatorsTest extends AnyFlatSpec with Matchers {
@@ -51,6 +51,10 @@ class ValidatorsTest extends AnyFlatSpec with Matchers {
     intercept[StepValidationException] { VariableStepValidator.validate(s) }
   }
 
+  it should "should validate variable Step (check is not supported)" in {
+    val s = new Step(id = "variable step", kind = "variable", sql = Some("select * from fake"), check = Some(Check(size = Some(10))))
+    intercept[StepValidationException] { VariableStepValidator.validate(s) }
+  }
   ///SCRIPT
   it should "should validate script Step (ok)" in {
     val s = Step(id = "script step", kind = "script", jsr223Engine = Some("python"), code = Some("example code"))
@@ -69,6 +73,11 @@ class ValidatorsTest extends AnyFlatSpec with Matchers {
 
   it should "should validate script Step (wrong) without jsr223Engine and code" in {
     val s = Step(id = "script step", kind = "script")
+    intercept[StepValidationException] { ScriptStepValidator.validate(s) }
+  }
+
+  it should "should validate script Step (check is not supported)" in {
+    val s = new Step(id = "script step", kind = "script", jsr223Engine = Some("python"), code = Some("example code"), check = Some(Check(size = Some(10))))
     intercept[StepValidationException] { ScriptStepValidator.validate(s) }
   }
 
@@ -126,6 +135,11 @@ class ValidatorsTest extends AnyFlatSpec with Matchers {
     intercept[StepValidationException] { UdfStepValidator.validate(s) }
   }
 
+  it should "should validate udf Step (check is not supported)" in {
+    val s = new Step(id = "udf step", kind = "udf", claz = Some("com.github.supermariolabs.spooq.udf.example.Foo"), check = Some(Check(size = Some(10))))
+    intercept[StepValidationException] { UdfStepValidator.validate(s) }
+  }
+
   ///CUSTOM
   it should "should validate custom Step (ok)" in {
     val s = new Step(id = "custom step", kind = "custom", claz = Some("com.github.supermariolabs.spooq.custom.example.Foo"))
@@ -137,4 +151,8 @@ class ValidatorsTest extends AnyFlatSpec with Matchers {
     intercept[StepValidationException] { CustomStepValidator.validate(s) }
   }
 
+  it should "should validate custom Step (check is not supported)" in {
+    val s = new Step(id = "custom step", kind = "custom", claz = Some("com.github.supermariolabs.spooq.udf.example.Foo"), check = Some(Check(size = Some(10))))
+    intercept[StepValidationException] { CustomStepValidator.validate(s) }
+  }
 }

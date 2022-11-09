@@ -29,12 +29,14 @@ object InputStreamStepValidator extends Validators {
 object VariableStepValidator extends Validators {
   def validate(step: Step): Unit = {
     if(!step.sql.isDefined) throw new StepValidationException(s"VariableStepValidator: (id = ${step.id}) 'sql' is mandatory")
+    if(step.check.isDefined) throw new StepValidationException(s"VariableStepValidator: (id = ${step.id}) 'check' is not supported")
   }
 }
 
 object ScriptStepValidator extends Validators {
   def validate(step: Step): Unit = {
     if(!step.jsr223Engine.isDefined || !step.code.isDefined) throw new StepValidationException(s"ScriptStepValidator: (id = ${step.id}) 'jsr223Engine' and 'code' are mandatory")
+    if(step.check.isDefined) throw new StepValidationException(s"ScriptStepValidator: (id = ${step.id}) 'check' is not supported")
   }
 }
 
@@ -53,11 +55,13 @@ object OutputStreamStepValidator extends Validators {
 object UdfStepValidator extends Validators {
   def validate(step: Step): Unit = {
     if(!step.claz.isDefined) throw new StepValidationException(s"UdfStepValidator: (id = ${step.id}) 'claz' is mandatory")
+    if(step.check.isDefined) throw new StepValidationException(s"UdfStepValidator: (id = ${step.id}) 'check' is not supported")
   }
 }
 
 object CustomStepValidator extends Validators {
   def validate(step: Step): Unit = {
     if(!step.claz.isDefined) throw new StepValidationException(s"CustomStepValidator: (id = ${step.id}) 'claz' is mandatory")
+    if(step.check.isDefined) throw new StepValidationException(s"CustomStepValidator: (id = ${step.id}) 'check' is not supported")
   }
 }

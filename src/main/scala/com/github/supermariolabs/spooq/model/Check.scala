@@ -3,10 +3,10 @@ package com.github.supermariolabs.spooq.model
 
 
 case class Check(
-    val size: Option[Integer],
-    val complete: Option[String],
-    val unique: Option[String],
-    val contain: Option[Tuple2[String, Seq[String]]]
+    val size: Option[Integer] = None,
+    val complete: Option[String] = None,
+    val unique: Option[String] = None,
+    val contain: Option[Tuple2[String, Seq[String]]] = None
 )
 
 //this values must be same of Check attibute's name

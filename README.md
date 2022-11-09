@@ -730,11 +730,18 @@ The command parameters supported by the application are:
 
 Spooq includes [Deequ](https://github.com/awslabs/deequ), a library built on top of Apache Spark for defining "unit tests for data" which measure data quality in large datasets
 
-Use Deequ inside our step is very easy because, for every Step, the user can add "check" subsection to manage:
- - size _my df must have exactly N rows_
- - complete, _all values inside the column X must be not null_
- - unique, _all values inside the column Y must be unique_
- - contain, _the column Z must contains only 0 and 1_
+Use Deequ inside our step is very easy because the user can add "check" subsection to manage:
+ - **size**, _my df must have exactly N rows_
+ - **complete**, _all values inside the column X must be not null_
+ - **unique**, _all values inside the column Y must be unique_
+ - **contain**, _the column Z must contains only 0 and 1_
+
+The checks enabled for this feature are:
+ - input
+ - input-stream
+ - sql
+ - output
+ - output-stream
 
 Example:
 ```hocon
