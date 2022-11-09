@@ -1,6 +1,7 @@
 package com.github.supermariolabs.spooq
 
 import com.github.supermariolabs.spooq.ansi.AnsiCodes
+import com.github.supermariolabs.spooq.check.CheckManager
 import org.apache.spark.sql.hive.thriftserver.HiveThriftServer2
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.slf4j.LoggerFactory
@@ -229,6 +230,11 @@ class Engine(conf: ApplicationConfiguration) {
         df = df.cache
       }
     })
+
+    //CHECK
+    if(in.check.isDefined) {
+      CheckManager.execute(in, df)
+    }
 
     dataFrames.put(in.id, df)
     df.createOrReplaceTempView(in.id)

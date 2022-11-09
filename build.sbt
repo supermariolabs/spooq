@@ -44,6 +44,7 @@ val commonDeps = Seq(
   "com.github.javafaker" % "javafaker" % "1.0.2",
   "org.apache.hbase" % "hbase-common" % "2.2.0" % "provided" intransitive,
   "org.apache.hbase" % "hbase-client" % "2.2.0" % "provided" intransitive,
+  "com.amazon.deequ" % "deequ" % (if (sparkVersion==spark2Version) "1.2.2-spark-2.4" else "1.2.2-spark-3.0")
 )
 
 Compile / unmanagedSourceDirectories += {

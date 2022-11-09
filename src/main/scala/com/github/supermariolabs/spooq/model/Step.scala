@@ -26,7 +26,8 @@ case class Step(
                var trigger: scala.Option[Map[String,String]],
                var dependsOn: scala.Option[List[String]],
                var show: scala.Option[Boolean],
-               var cache: scala.Option[Boolean]
+               var cache: scala.Option[Boolean],
+               var check: scala.Option[Check]
                ) {
   implicit def reflector(ref: AnyRef) = new {
     def getField(name: String): Any = ref.getClass.getMethods.find(_.getName == name).get.invoke(ref)
