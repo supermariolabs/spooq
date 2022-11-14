@@ -80,7 +80,7 @@ class CheckManagerTests extends AnyFlatSpec with Matchers with SparkSuite {
   //    CONTAINS
   //****************
   it should "should pass contain check" in {
-    val fakestep = Step(id = "test", kind = "test", check = Option(Check(contain = Some(Seq(("id", Seq("1","2","3","4","5")))))))
+    val fakestep = Step(id = "test", kind = "test", check = Option(Check(contain = Some(Seq(Map(("id", Seq("1","2","3","4","5"))))))))
 
     import sparkSession.implicits._
     val df = Seq((1, "row1"), (2, "row2"), (3, "row3"), (4, "row4"), (5, "row5")).toDF("id", "name")
@@ -89,7 +89,7 @@ class CheckManagerTests extends AnyFlatSpec with Matchers with SparkSuite {
   }
 
   it should "should pass not contain check" in {
-    val fakestep = Step(id = "test", kind = "test", check = Option(Check(contain = Some(Seq(("id", Seq("1","2","3")))))))
+    val fakestep = Step(id = "test", kind = "test", check = Option(Check(contain = Some(Seq(Map(("id", Seq("1","2","3"))))))))
 
     import sparkSession.implicits._
     val df = Seq((1, "row1"), (2, "row2"), (3, "row3"), (4, "row4"), (5, "row5")).toDF("id", "name")

@@ -36,9 +36,13 @@ object CheckManager {
         None
       }
       case CHECK_CONTAIN => if(check.contain.isDefined) {
-        Some(check.contain.get.map { r => {
-          Check(CheckLevel.Error, "integrity contain checks").isContainedIn(r._1, r._2.toArray)
-        }})
+        Some(check.contain.get.map { r: Map[String, Seq[String]] => {
+          r.toSeq.map(
+            r2 => {
+              Check(CheckLevel.Error, "integrity contain checks").isContainedIn(r2._1, r2._2.toArray)
+            }
+          )
+        }}.flatten)
       } else {
         None
       }

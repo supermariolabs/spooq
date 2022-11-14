@@ -4,7 +4,7 @@ case class Check(
     val size: Option[Integer] = None,
     val complete: Option[Seq[String]] = None,
     val unique: Option[Seq[String]] = None,
-    val contain: Option[Seq[Tuple2[String, Seq[String]]]] = None
+    val contain: Option[Seq[Map[String, Seq[String]]]] = None
 )
 
 //this values must be same of Check attibute's name
