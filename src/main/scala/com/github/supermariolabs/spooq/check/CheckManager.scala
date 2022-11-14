@@ -14,32 +14,38 @@ class CheckManagerException(message: String) extends Exception(message: String)
 object CheckManager {
   val logger = LoggerFactory.getLogger(this.getClass)
 
-  def parse(command: String, check: com.github.supermariolabs.spooq.model.Check) : Option[Check] = {
+  def parse(command: String, check: com.github.supermariolabs.spooq.model.Check) : Option[Seq[Check]] = {
     command match {
       case CHECK_SIZE => if(check.size.isDefined) {
-        Some(Check(CheckLevel.Error, "integrity size checks").hasSize(_ == check.size.get))
+        Some(Seq(Check(CheckLevel.Error, "integrity size checks").hasSize(_ == check.size.get)))
       } else {
         None
       }
       case CHECK_COMPLETE => if(check.complete.isDefined) {
-        Some(Check(CheckLevel.Error, "integrity complete checks").isComplete(check.complete.get))
+        Some(check.complete.get.map { r => {
+          Check(CheckLevel.Error, "integrity complete checks").isComplete(r)
+        }})
       } else {
         None
       }
       case CHECK_UNIQUE => if(check.unique.isDefined) {
-        Some(Check(CheckLevel.Error, "integrity unique checks").isUnique(check.unique.get))
+        Some(check.unique.get.map { r => {
+          Check(CheckLevel.Error, "integrity unique checks").isUnique(r)
+        }})
       } else {
         None
       }
       case CHECK_CONTAIN => if(check.contain.isDefined) {
-        Some(Check(CheckLevel.Error, "integrity contain checks").isContainedIn(check.contain.get._1, check.contain.get._2.toArray))
+        Some(check.contain.get.map { r => {
+          Check(CheckLevel.Error, "integrity contain checks").isContainedIn(r._1, r._2.toArray)
+        }})
       } else {
         None
       }
     }
   }
 
-  def execute(step: Step, df: DataFrame) = {
+  def execute(step: Step, df: DataFrame): Boolean = {
 
     val _verificationRunBuilder = VerificationSuite()
       .onData(df)
@@ -49,7 +55,7 @@ object CheckManager {
     val verificationResult = fields.foldLeft(_verificationRunBuilder) {
       (_verificationRunBuilder, field) =>
         parse(field, step.check.get) match {
-          case Some(c) => _verificationRunBuilder.addCheck (c)
+          case Some(c) => _verificationRunBuilder.addChecks (c)
           case None => _verificationRunBuilder
         }
     }.run()
@@ -67,5 +73,7 @@ object CheckManager {
         //raise exception (it could be configurable)
         throw new CheckManagerException(msg)
       }
+
+      true
     }
 }

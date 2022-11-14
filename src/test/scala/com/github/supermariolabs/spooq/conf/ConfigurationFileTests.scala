@@ -13,8 +13,10 @@ class ConfigurationFileTests  extends AnyFlatSpec with Matchers {
 
   it should "should is valid and contain a Step with Check" in {
     val job = Application.parseJobFile("src/test/resources/conf/002.conf")
+    val check = job.steps.head.check
     job.steps.length should be(1)
-    job.steps.head.check.isDefined should be(true)
+    check.isDefined should be(true)
+    check.get.size should be(Some(10))
   }
 
   it should "should raise exception because file is empty" in {

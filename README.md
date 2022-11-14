@@ -750,19 +750,22 @@ desc = ""
 
 steps = [
     {
-        id = first_input_step
+        id = employees
         shortDesc = ""
         kind = input
         format = jdbc
         options = {
             url = "jdbc:mysql://127.0.0.1:3306/db"
             driver = "com.mysql.cj.jdbc.Driver"
-            dbtable = "db.table"
+            dbtable = "db.employees"
             user = ""
             password = ""
         }
         check = {
             size = 10
+            complete = ["firstname", "lastname"]
+            unique = ["key"]
+            contain = [{ "gender": ["M", "F"] }]
         }
     }
 ]
