@@ -47,6 +47,7 @@ object Application {
       logger.info(s"\n${conf.summary.replace("Scallop", s"${conf.getClass.getSimpleName}")}")
 
       val job = parseJobFile(conf.configurationFile.toOption.get, conf.format.toOption)
+
       val jobUtils = new JobUtils(job)
       jobUtils.dump(job)
 
@@ -114,7 +115,8 @@ object Application {
         job = j
       }
       case Left(e) => {
-        exit(s"Parsing error [ ${e.getMessage} ]")
+        logger.error(s"Parsing error [ ${e.getMessage} ]")
+        throw e
       }
     }
     job

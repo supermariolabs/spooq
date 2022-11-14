@@ -1,6 +1,7 @@
 package com.github.supermariolabs.spooq
 
 import com.github.supermariolabs.spooq.ansi.AnsiCodes
+import com.github.supermariolabs.spooq.check.CheckManager
 import org.apache.spark.sql.hive.thriftserver.HiveThriftServer2
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.slf4j.LoggerFactory
@@ -233,6 +234,11 @@ class Engine(conf: ApplicationConfiguration) {
       }
     })
 
+    //DATA QUALITY CHECK
+    if(in.check.isDefined) {
+      CheckManager.execute(in, df)
+    }
+
     dataFrames.put(in.id, df)
     df.createOrReplaceTempView(in.id)
 
@@ -270,6 +276,11 @@ class Engine(conf: ApplicationConfiguration) {
       df = df.withColumn("value",from_avro(col("value"),avroSchema))
     })
 
+    //DATA QUALITY CHECK
+    if(in.check.isDefined) {
+      CheckManager.execute(in, df)
+    }
+
     dataFrames.put(in.id, df)
     df.createOrReplaceTempView(in.id)
 
@@ -300,6 +311,11 @@ class Engine(conf: ApplicationConfiguration) {
         df = df.cache
       }
     })
+
+    //DATA QUALITY CHECK
+    if(trx.check.isDefined) {
+      CheckManager.execute(trx, df)
+    }
 
     dataFrames.put(trx.id, df)
     df.createOrReplaceTempView(trx.id)
@@ -408,6 +424,11 @@ class Engine(conf: ApplicationConfiguration) {
 
     var df = dataFrames.get(out.source.get).get
 
+    //DATA QUALITY CHECK
+    if(out.check.isDefined) {
+      CheckManager.execute(out, df)
+    }
+
     out.repartition.foreach(repartitionDefined => {
       df = df.repartition(repartitionDefined.map(col(_)):_*)
     })
@@ -445,7 +466,14 @@ class Engine(conf: ApplicationConfiguration) {
     })
     logger.info(s"Processing '${out.id}' (kind: ${out.kind}, format: ${out.format.getOrElse("-")}, options: [$options])")
 
-    var writer = dataFrames.get(out.source.get).get.writeStream
+    val df = dataFrames.get(out.source.get).get
+
+    //DATA QUALITY CHECK
+    if(out.check.isDefined) {
+      CheckManager.execute(out, df)
+    }
+
+    var writer = df.writeStream
 
     out.format.foreach(formatDefined => {
       formatDefined match {
