@@ -34,19 +34,30 @@ object Application {
     }
 
   def run(configFile: String): Option[EngineOut] = {
-    run(new ApplicationConfiguration("-c"::configFile::Nil))
+    run(new ApplicationConfiguration("--configuration-file"::configFile::Nil))
   }
 
-  def run(configFile: String, format: String): Option[EngineOut] = {
-    run(new ApplicationConfiguration("-c"::configFile::"-f"::format::Nil))
+  def run(config: String, format: String, inline: Boolean=false): Option[EngineOut] = {
+    if (inline) run(new ApplicationConfiguration("--configuration-string"::config::"-f"::format::Nil))
+    else run(new ApplicationConfiguration("--configuration-file"::config::"-f"::format::Nil))
   }
 
   def run(conf: ApplicationConfiguration): Option[EngineOut] = {
+    ansi = new AnsiCodes(conf.rich.getOrElse(false))
     Try {
       printBanner()
       logger.info(s"\n${conf.summary.replace("Scallop", s"${conf.getClass.getSimpleName}")}")
 
-      val job = parseJobFile(conf.configurationFile.toOption.get, conf.format.toOption)
+      var inline = false
+      conf.configurationFile.toOption.foreach(cf => {
+        inline = false
+      })
+      conf.configurationString.toOption.foreach(cs=>{
+        inline = true
+      })
+
+      val job = parseJobFile(conf.configurationFile.toOption.getOrElse(conf.configurationString.toOption.get), conf.format.toOption, inline)
+
       val jobUtils = new JobUtils(job)
       jobUtils.dump(job)
 
@@ -57,14 +68,14 @@ object Application {
         logger.info(s"All done! :-)")
         var reportStr = ""
         ListMap(out.report.toSeq.sortBy(_._2.index):_*).foreach(r => {
-          reportStr+=s"\n[${r._2.index}] ${r._1} -> ${if (r._2.done) s"${ansi.GREEN}SUCCESS${ansi.RESET}" else if (r._2.reason.isDefined && r._2.reason.get.contains("dependencyCheck failed")) s"${ansi.YELLOW}SKIPPED${ansi.RESET}" else s"${ansi.RED}FAILED${ansi.RESET}"}"
+          reportStr+=s"\n[${r._2.index}] ${r._1} -> ${if (r._2.done.exit) s"${ansi.GREEN}SUCCESS${ansi.RESET}" else if (r._2.reason.isDefined && r._2.reason.get.contains("dependencyCheck failed")) s"${ansi.YELLOW}SKIPPED${ansi.RESET}" else s"${ansi.RED}FAILED${ansi.RESET}"}"
           r._2.reason.foreach(msg=>reportStr+=s" (${msg.toString})")
         })
         logger.info(s"\n-------------\n${ansi.YELLOW}FINAL REPORT${ansi.RESET}\n-------------$reportStr")
         Some(out)
       }
       case Failure(exception) => {
-        logger.error(s"Something gone wrong: ${exception.toString}")
+        logger.error(s"Something gone wrong: ${exception.toString}", exception)
         None
       }
     }
@@ -95,9 +106,11 @@ object Application {
 
   }
 
-  def parseJobFile(cfgFile: String, format: Option[String]=None): Job = {
+  def parseJobFile(cfgFile: String, format: Option[String]=None, inline: Boolean=false): Job = {
+    println(s"[parseJobFile] inline: $inline")
     val knownFormats = ("hocon"::"conf"::"json"::"yaml"::"yml"::Nil).toSet[String]
     var job: Job = Job("-",None,None,List.empty)
+
     val fileFormat = format.getOrElse({
       logger.info("Trying to understand the format of the configuration file...")
       val foundFormat = new File(cfgFile).getName.split("\\.").last.toLowerCase
@@ -107,7 +120,9 @@ object Application {
       foundFormat
     })
     logger.info(s"File format: $fileFormat")
-    val jobCfg = decode[Job](jsonString(cfgFile, fileFormat))
+
+    val jobCfg = decode[Job](jsonString(cfgFile, fileFormat, inline))
+
     jobCfg match {
       case Right(j) => {
         logger.info(s"Configuration file correctly read and parsed")
@@ -120,9 +135,11 @@ object Application {
     job
   }
 
-  def jsonString(cfgFile: String, format: String): String = {
+  def jsonString(cfgFile: String, format: String, inline: Boolean=false): String = {
+    println(s"[jsonString] inline: $inline")
     var out = ""
-    val in = scala.io.Source.fromFile(cfgFile).mkString
+    val in = if (inline) cfgFile else scala.io.Source.fromFile(cfgFile).mkString
+
     format match {
       case "json" => {
         out = in

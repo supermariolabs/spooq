@@ -5,11 +5,13 @@ import scala.util.Try
 logLevel := Level.Error
 
 name := "Spooq"
-version := "0.9.9beta"
+version := "0.9.10"
 
 val buildType = System.getProperty("build.spark.version", "3")
 val standalone = Try(System.getProperty("standalone", "").toBoolean).getOrElse(false)
 scalaVersion := (if (buildType=="3") "2.12.16" else "2.11.12")
+
+addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full)
 
 javacOptions ++= Seq("-source", "8", "-target", "8")
 
@@ -22,11 +24,9 @@ configString := s"using scala: ${scalaVersion.value} and spark: $sparkVersion [s
 
 val sparkDeps = Seq(
   "org.apache.spark" %% "spark-sql" % sparkVersion,
+  "org.apache.spark" %% "spark-mllib" % sparkVersion,
   "org.apache.spark" %% "spark-sql-kafka-0-10" % sparkVersion,
   "org.apache.spark" %% "spark-avro" % sparkVersion,
-  "org.apache.spark" %% "spark-hive-thriftserver" % sparkVersion,
-  "org.apache.spark" %% "spark-sql" % sparkVersion,
-  "org.apache.spark" %% "spark-sql-kafka-0-10" % sparkVersion,
   "org.apache.spark" %% "spark-hive-thriftserver" % sparkVersion,
   "org.apache.spark" %% "spark-unsafe" % sparkVersion,
   "org.apache.spark" %% "spark-catalyst" % sparkVersion,
@@ -38,21 +38,46 @@ val commonDeps = Seq(
   "io.circe" %% "circe-core" % (if (sparkVersion==spark2Version) "0.7.0-M1" else "0.8.0"),
   "io.circe" %% "circe-parser" % (if (sparkVersion==spark2Version) "0.7.0-M1" else "0.8.0"),
   "io.circe" %% "circe-generic" % (if (sparkVersion==spark2Version) "0.7.0-M1" else "0.8.0"),
+  "io.spray" %%  "spray-json" % "1.3.6",
   "org.freemarker" % "freemarker" % "2.3.31",
   "org.rogach" %% "scallop" % "4.1.0",
   "org.jline" % "jline" % "3.0.0.M2",
   "com.github.javafaker" % "javafaker" % "1.0.2",
   "org.apache.hbase" % "hbase-common" % "2.2.0" % "provided" intransitive,
   "org.apache.hbase" % "hbase-client" % "2.2.0" % "provided" intransitive,
+  "org.python" % "jython-standalone" % "2.7.3",
+  "com.sparkjava" % "spark-core" % "2.9.4",
+  "org.scala-lang" % "scala-compiler" % "2.12.16",
+  // https://mvnrepository.com/artifact/com.lihaoyi/ammonite
+  "com.lihaoyi" % "ammonite" % "2.5.5" cross CrossVersion.full
+)
+
+val avroDeps = Seq(
+  "za.co.absa" %% "abris" % (if (sparkVersion==spark2Version) "5.0.0" else "6.3.0"),
+)
+
+val geoDeps = Seq(
+  "org.apache.sedona" %% "sedona-python-adapter-3.0" % "1.2.1-incubating" % "provided",
+)
+
+val mongoDeps = Seq(
+  "org.mongodb" % "mongo-java-driver" % "3.12.11" % "provided",
 )
 
 Compile / unmanagedSourceDirectories += {
   baseDirectory.value / s"src/main/scala_${scalaVersion.value.substring(0,4)}"
 }
 
-//resolvers += "Cloudera" at "https://repository.cloudera.com/artifactory/cloudera-repos/"
+//Cloudera maven repo
+resolvers += "Cloudera" at "https://repository.cloudera.com/artifactory/cloudera-repos/"
+//Confluent maven repo
+resolvers += "Confluent" at "https://packages.confluent.io/maven/"
+
 libraryDependencies ++= (if (standalone) sparkDeps else sparkDeps.map(dep => dep % Provided))
 libraryDependencies ++= commonDeps
+libraryDependencies ++= avroDeps
+libraryDependencies ++= geoDeps
+libraryDependencies ++= mongoDeps
 libraryDependencies += "junit" % "junit" % "4.13.2" % Test
 
 assembly / mainClass := Some("com.github.supermariolabs.spooq.Application")

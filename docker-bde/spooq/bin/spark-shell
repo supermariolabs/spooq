@@ -1,0 +1,37 @@
+#!/bin/bash
+source $SPOOQ_HOME/bin/loadenv
+
+JAR=$SPOOQ_HOME/lib/spooq-spark3.jar
+
+ARGS="$@"
+
+# Example
+# SPOOQ_PACKAGES=org.postgresql:postgresql:42.4.0,org.apache.spark:spark-sql-kafka-0-10_2.12:3.3.0
+
+if [ -n "$SPOOQ_PACKAGES" ]
+then
+    echo "PACKAGES_CMD=--packages $SPOOQ_PACKAGES"
+    PACKAGES_CMD="--packages $SPOOQ_PACKAGES"
+else
+    PACKAGES_CMD=
+fi
+
+if [ -z "$JAVA_HOME" ]
+then
+    echo "JAVA_HOME not defined!"
+else
+    echo "Using JAVA_HOME=$JAVA_HOME"
+fi
+
+if [ -z "$SPARK_HOME" ]
+then
+    echo "SPARK_HOME not defined!"
+else 
+    echo "Using SPARK_HOME=$SPARK_HOME"
+    $SPARK_HOME/bin/spark-shell \
+	--jars $JAR \
+	--master local[*] \
+	--conf spark.executor.extraJavaOptions=-Dlog4j.configurationFile=$SPOOQ_HOME/conf/log4j2.properties \
+	--conf spark.driver.extraJavaOptions=-Dlog4j.configurationFile=$SPOOQ_HOME/conf/log4j2.properties \
+	$PACKAGES_CMD
+fi

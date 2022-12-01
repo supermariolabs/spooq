@@ -1,0 +1,15 @@
+#!/bin/bash
+source $SPOOQ_HOME/bin/loadenv
+
+JAR=$SPOOQ_HOME/lib/spooq-spark3-standalone.jar
+
+ARGS="$@"
+
+if [ -z "$JAVA_HOME" ]
+then
+    echo "JAVA_HOME not defined!"
+else
+    echo "Using JAVA_HOME=$JAVA_HOME"
+fi
+
+$JAVA_HOME/bin/java -Dlog4j.configurationFile=$SPOOQ_HOME/conf/log4j2.properties -cp "$SPOOQ_HOME/lib/*" com.github.supermariolabs.spooq.Application $ARGS

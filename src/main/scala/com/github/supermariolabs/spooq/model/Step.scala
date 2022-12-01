@@ -2,8 +2,8 @@ package com.github.supermariolabs.spooq.model
 
 case class Step(
                var id: String,
-               var avro: scala.Option[Boolean],
-               var avroSchema: scala.Option[String],
+               //var avro: scala.Option[Boolean],
+               //var avroSchema: scala.Option[String],
                var avroSchemas: scala.Option[Map[String,String]],
                var shortDesc: scala.Option[String],
                var desc: scala.Option[String],
@@ -16,6 +16,8 @@ case class Step(
                var function: scala.Option[String],
                var options: scala.Option[Map[String,String]],
                var sql: scala.Option[String],
+               //var watermark: scala.Option[Map[String,String]],
+               var columns: scala.Option[List[Column]],
                var source: scala.Option[String],
                var path: scala.Option[String],
                var mode: scala.Option[String],

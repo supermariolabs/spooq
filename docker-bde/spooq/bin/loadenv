@@ -1,0 +1,4 @@
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+JAVA_HOME=/usr/lib/jvm/default-jvm/jre
+SPARK_HOME=/spark
