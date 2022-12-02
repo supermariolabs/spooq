@@ -71,6 +71,9 @@ class HttpServer(engine: Engine)(implicit spark: SparkSession) {
       retVal
     })
 
+    /**
+     * Request Example: curl -X GET localhost:4242/unpersist/dataFrameName
+     */
     Spark.get("/unpersist/:name", (req: Request, res: Response) => {
       val id = req.params(":name")
       engine.dataFrames.get(id) match {
