@@ -20,6 +20,7 @@ lib/
 log/
 target/
 project/
+!project/plugins.sbt
 .bsp/
 
 # Spark

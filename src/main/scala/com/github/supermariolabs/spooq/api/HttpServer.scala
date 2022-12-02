@@ -71,6 +71,15 @@ class HttpServer(engine: Engine)(implicit spark: SparkSession) {
       retVal
     })
 
+    Spark.get("/unpersist/:name", (req: Request, res: Response) => {
+      val id = req.params(":name")
+      engine.dataFrames.get(id) match {
+        case Some(df) => df.unpersist()
+        case None => res.status(404)
+      }
+      s"""{"id":"$id", "res":[httpStatus: ${res.status()}]}"""
+    })
+
     Spark.post("/step", (req: Request, res: Response) => {
       //implicit val stepDecoder: Decoder[Step] = deriveDecoder[Step]
       val decodedStep = decode[Step](req.body())
