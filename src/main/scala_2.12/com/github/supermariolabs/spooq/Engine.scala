@@ -16,7 +16,8 @@ import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.hive.thriftserver.HiveThriftServer2
 import org.apache.spark.sql.streaming.Trigger
-import org.apache.spark.sql.{DataFrame, SparkSession, avro}
+import org.apache.spark.sql.types.{MapType, StringType}
+import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession, avro}
 import org.slf4j.LoggerFactory
 import za.co.absa.abris.avro.functions
 import za.co.absa.abris.config.AbrisConfig
@@ -53,7 +54,8 @@ class Engine(providedConf: ApplicationConfiguration) {
     "avro-serde",
     "udf",
     "output",
-    "output-stream"
+    "output-stream",
+    "parse-json"
   )
 
   def run(job: Job): EngineOut = {
@@ -807,10 +809,43 @@ class Engine(providedConf: ApplicationConfiguration) {
 
   def processUdf(udf: Step)(implicit spark: SparkSession): ProcessingOutput = {
     val className = udf.claz.get
-    val claz = Class.forName(className).newInstance.asInstanceOf[SimpleUDF]
+    val claz = Class.forName(className).getConstructors.last.newInstance(udf.options.getOrElse(Map.empty[String,String])).asInstanceOf[SimpleUDF]
     spark.udf.register(udf.id, claz.udf)
 
     ProcessingOutput(udf, List.empty[LogEntry], None, true)
+  }
+
+  def processParseJson(in: Step)(implicit spark: SparkSession): ProcessingOutput = {
+    import spark.implicits._
+    val sourceDf = in.source.getOrElse("json")
+    val df = dataFrames(sourceDf)
+    var column = "default"
+    in.options.foreach(optionsDefined =>
+      column = optionsDefined.getOrElse("column", column))
+
+    //cast json column into MapType
+    val dfMapType = df.select(explode(col(column)).as("json"))
+      .withColumn("json", from_json(col("json"), MapType(StringType, StringType)))
+    //take all Map keys to generate columns
+    val keysDF = dfMapType.select(explode(map_keys($"json"))).distinct()
+    val keys = keysDF.collect().map(_.getString(0))
+    val keyCols = keys.map(k => col("json").getItem(k).as(k))
+    var out = dfMapType.select(keyCols: _*)
+
+    in.cache.foreach(cacheDefined => {
+      if (cacheDefined) {
+        logger.info(s"${ansi.YELLOW}Caching data${ansi.RESET}")
+        out = out.cache
+      }
+    })
+
+    dataFrames.put(in.id, out)
+    out.createOrReplaceTempView(in.id)
+
+    in.show.foreach(showDefined => {
+      if (showDefined) logger.info(s"${ansi.CYAN}SAMPLE DATA${ansi.RESET}\n${SparkUtils.dfAsString(df)}")
+    })
+    ProcessingOutput(in, List.empty[LogEntry], None, true)
   }
 
 }
