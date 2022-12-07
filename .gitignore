@@ -19,8 +19,8 @@
 lib/
 log/
 target/
-project/
-!project/plugins.sbt
+project/target
+project/project
 .bsp/
 
 # Spark
