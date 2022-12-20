@@ -95,7 +95,7 @@ class HttpServer(engine: Engine)(implicit spark: SparkSession) {
               else {
                 engine.dataFrames.put(id, df)
                 df.createOrReplaceTempView(id)
-                s"""{"id":"$id", "res":[${out.map(_.toJSON.collect()).get.mkString(",")}]}"""
+                s"""{"id":"$id", "res":[TempView created correctly]}"""
               }
 
             case None => s"""{"id":"$id", "res":[TempView not found]}"""
