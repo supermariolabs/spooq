@@ -6,6 +6,7 @@ import com.github.supermariolabs.spooq.model.{ProcessingOutput, Report, Step}
 import org.slf4j.LoggerFactory
 import spark.{Request, Response, Spark}
 import io.circe._
+import org.apache.spark.sql.DataFrame
 //import io.circe.generic.semiauto._
 import io.circe.generic.auto._
 import io.circe.parser._
@@ -25,13 +26,13 @@ class HttpServer(engine: Engine)(implicit spark: SparkSession) {
     //CORS enabled?
     if (engine.conf.httpCors.getOrElse(false)) {
       Spark.options("/*", (req: Request, res: Response) => {
-          val accessControlRequestHeaders = req.headers("Access-Control-Request-Headers")
-          if (accessControlRequestHeaders != null) res.header("Access-Control-Allow-Headers", accessControlRequestHeaders)
-          val accessControlRequestMethod = req.headers("Access-Control-Request-Method")
-          if (accessControlRequestMethod != null) res.header("Access-Control-Allow-Methods", accessControlRequestMethod)
+        val accessControlRequestHeaders = req.headers("Access-Control-Request-Headers")
+        if (accessControlRequestHeaders != null) res.header("Access-Control-Allow-Headers", accessControlRequestHeaders)
+        val accessControlRequestMethod = req.headers("Access-Control-Request-Method")
+        if (accessControlRequestMethod != null) res.header("Access-Control-Allow-Methods", accessControlRequestMethod)
 
         "OK"
-        })
+      })
 
       Spark.before((request, response) => {
         response.header("Access-Control-Allow-Origin", "*")
@@ -45,7 +46,7 @@ class HttpServer(engine: Engine)(implicit spark: SparkSession) {
       s"${banner.replace("$$BUILD$$", build)}"
     })
 
-    Spark.post("/sql", (req: Request, res: Response) => {
+    /*Spark.post("/sql", (req: Request, res: Response) => {
       //implicit val sqlRequestDecoder: Decoder[SqlRequest] = deriveDecoder[SqlRequest]
       val decodedSql = decode[SqlRequest](req.body)
       var out: Option[Array[String]] = None
@@ -69,18 +70,73 @@ class HttpServer(engine: Engine)(implicit spark: SparkSession) {
       }
 
       retVal
+    })*/
+
+    /**
+     * If collect is false, will be created a new df with a temp view using id as name, otherwise will be only showed
+     * the query output in json format
+     * Request Example: curl -X POST localhost:4242/sql1 -d '{"id":"test1","sql":"SELECT * FROM helloGeo", "collect":false}'
+     */
+    Spark.post("/sql", (req: Request, res: Response) => {
+      //implicit val sqlRequestDecoder: Decoder[SqlRequest] = deriveDecoder[SqlRequest]
+      val decodedSql: Either[Error, SqlRequest] = decode[SqlRequest](req.body)
+      res.`type`("application/json")
+
+      decodedSql match {
+        case Right(s) =>
+          val id = s.id
+          val out: Option[DataFrame] = Some(spark.sql(s.sql))
+          val collect = s.collect
+
+          out match {
+            case Some(df) =>
+              if (collect)
+                s"""{"id":"$id", "res":[${out.map(_.toJSON.collect()).get.mkString(",")}]}"""
+              else {
+                engine.dataFrames.put(id, df)
+                df.createOrReplaceTempView(id)
+                s"""{"id":"$id", "res":[TempView created correctly]}"""
+              }
+
+            case None => s"""{"id":"$id", "res":[TempView not found]}"""
+          }
+
+        case Left(e) => e.getMessage
+      }
     })
 
     /**
-     * Request Example: curl -X GET localhost:4242/unpersist/dataFrameName
+     * Request Example: curl -X GET localhost:4242/unpersist/dataframeName
      */
     Spark.get("/unpersist/:name", (req: Request, res: Response) => {
       val id = req.params(":name")
-      engine.dataFrames.get(id) match {
-        case Some(df) => df.unpersist()
-        case None => res.status(404)
+      val isCached = engine.dataFrames.get(id) match {
+        case Some(df) =>
+          df.unpersist()
+          df.storageLevel.useMemory.toString
+        case None =>
+          res.status(404)
+          "error"
       }
-      s"""{"id":"$id", "res":[httpStatus: ${res.status()}]}"""
+      s"""{"id":"$id", "res":[httpStatus: ${res.status()}, isCached: $isCached]}"""
+    })
+
+    /**
+     * Request Example: curl -X GET localhost:4242/cache/dataframeName
+     */
+    Spark.get("/cache/:name", (req: Request, res: Response) => {
+      val id = req.params(":name")
+      val isCached = engine.dataFrames.get(id) match {
+        case Some(df) =>
+          df.cache()
+          df.storageLevel.useMemory.toString
+
+        case None =>
+          res.status(404)
+          "error"
+
+      }
+      s"""{"id":"$id", "res":[httpStatus: ${res.status()}, isCached: $isCached]}"""
     })
 
     Spark.post("/step", (req: Request, res: Response) => {
