@@ -75,7 +75,7 @@ class HttpServer(engine: Engine)(implicit spark: SparkSession) {
     /**
      * If collect is false, will be created a new df with a temp view using id as name, otherwise will be only showed
      * the query output in json format
-     * Request Example: curl -X POST localhost:4242/sql1 -d '{"id":"test1","sql":"SELECT * FROM helloGeo", "collect":false}'
+     * Request Example: curl -X POST localhost:4242/sql -d '{"id":"test1","sql":"SELECT * FROM helloGeo", "collect":false}'
      */
     Spark.post("/sql", (req: Request, res: Response) => {
       //implicit val sqlRequestDecoder: Decoder[SqlRequest] = deriveDecoder[SqlRequest]
@@ -95,7 +95,7 @@ class HttpServer(engine: Engine)(implicit spark: SparkSession) {
               else {
                 engine.dataFrames.put(id, df)
                 df.createOrReplaceTempView(id)
-                s"""{"id":"$id", "res":[TempView created correctly]}"""
+                s"""{"id":"$id", "res":[${out.map(_.toJSON.collect()).get.mkString(",")}]}"""
               }
 
             case None => s"""{"id":"$id", "res":[TempView not found]}"""
