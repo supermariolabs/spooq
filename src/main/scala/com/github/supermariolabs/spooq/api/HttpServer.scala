@@ -12,6 +12,7 @@ import io.circe.generic.auto._
 import io.circe.parser._
 import io.circe.syntax._
 import org.apache.spark.sql.SparkSession
+import scala.util.{Try,Success,Failure}
 
 import scala.io.Source
 
@@ -85,23 +86,28 @@ class HttpServer(engine: Engine)(implicit spark: SparkSession) {
       decodedSql match {
         case Right(s) =>
           val id = s.id
-          val out: Option[DataFrame] = Some(spark.sql(s.sql))
-          val collect = s.collect
+          val out: Try[DataFrame] = Try(spark.sql(s.sql))
+          val collect = s.collect.getOrElse(true)
 
           out match {
-            case Some(df) =>
-              if (collect)
+            case Success(df) =>
+              res.status(200)
+              if (collect) {
                 s"""{"id":"$id", "res":[${out.map(_.toJSON.collect()).get.mkString(",")}]}"""
-              else {
+              } else {
                 engine.dataFrames.put(id, df)
                 df.createOrReplaceTempView(id)
                 s"""{"id":"$id", "res":[TempView created correctly]}"""
               }
 
-            case None => s"""{"id":"$id", "res":[TempView not found]}"""
+            case Failure(e) =>
+              res.status(404)
+              s"""{"id":"$id", "res":[${e.getMessage}]}"""
           }
 
-        case Left(e) => e.getMessage
+        case Left(e) =>
+          res.status(400)
+          s"Bad Request! Error:${e.getMessage}"
       }
     })
 
