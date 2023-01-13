@@ -7,10 +7,13 @@ import io.circe.generic.auto._
 import com.github.supermariolabs.spooq.conf.ApplicationConfiguration
 import com.github.supermariolabs.spooq.logging.JobUtils
 import com.github.supermariolabs.spooq.model.{EngineOut, Job}
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.{FSDataInputStream, FileSystem, Path}
 
-import java.io.{File, StringReader, StringWriter}
+import java.io.{StringReader, StringWriter}
+import java.net.URI
 import java.util
-import javax.script.{ScriptEngineFactory, ScriptEngineManager}
+import javax.script.ScriptEngineManager
 import scala.collection.immutable.ListMap
 import scala.io.Source
 import scala.util.{Failure, Properties, Success, Try}
@@ -110,10 +113,11 @@ object Application {
     println(s"[parseJobFile] inline: $inline")
     val knownFormats = ("hocon"::"conf"::"json"::"yaml"::"yml"::Nil).toSet[String]
     var job: Job = Job("-",None,None,List.empty)
+    val fs: FileSystem = FileSystem.get(new URI(cfgFile), new Configuration())
 
     val fileFormat = format.getOrElse({
       logger.info("Trying to understand the format of the configuration file...")
-      val foundFormat = new File(cfgFile).getName.split("\\.").last.toLowerCase
+      val foundFormat = fs.getFileStatus(new Path(cfgFile)).getPath.getName.split("\\.").last.toLowerCase
       if (!knownFormats.contains(foundFormat)) {
         throw new Exception(s"File format unknown: $foundFormat")
       }
@@ -121,7 +125,13 @@ object Application {
     })
     logger.info(s"File format: $fileFormat")
 
-    val jobCfg = decode[Job](jsonString(cfgFile, fileFormat, inline))
+    val inputFile = if (inline) cfgFile else {
+      val stream: FSDataInputStream = fs.open(new Path(cfgFile))
+      Source.fromInputStream(stream).takeWhile(_ != null).mkString
+    }
+    println(s"[jsonString] inline: $inline")
+
+    val jobCfg = decode[Job](jsonString(fileFormat, inputFile))
 
     jobCfg match {
       case Right(j) => {
@@ -135,10 +145,8 @@ object Application {
     job
   }
 
-  def jsonString(cfgFile: String, format: String, inline: Boolean=false): String = {
-    println(s"[jsonString] inline: $inline")
+  def jsonString(format: String, in: String): String = {
     var out = ""
-    val in = if (inline) cfgFile else scala.io.Source.fromFile(cfgFile).mkString
 
     format match {
       case "json" => {

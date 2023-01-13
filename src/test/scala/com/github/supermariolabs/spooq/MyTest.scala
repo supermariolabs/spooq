@@ -3,16 +3,14 @@ package com.github.supermariolabs.spooq
 import com.github.supermariolabs.spooq.model.Step
 import com.github.supermariolabs.spooq.model.json.StepEncoder
 import com.github.supermariolabs.spooq.udf.utils.UdfUtils
-import com.mongodb.client.MongoClients
-import org.apache.hadoop.shaded.com.fasterxml.jackson.databind.ObjectMapper
-import org.apache.sedona.sql.utils.SedonaSQLRegistrator
-import org.apache.spark.sql.functions.{col, explode, from_json, map_keys, soundex}
-import org.apache.spark.sql.types.{ArrayType, MapType, StringType, StructType}
-import org.apache.spark.sql.{DataFrame, Dataset, Encoders, SparkSession}
-import org.bson.Document
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.{FSDataInputStream, FileSystem, Path}
+import org.apache.spark.sql.functions.from_json
+import org.apache.spark.sql.types.{ArrayType, StringType}
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.junit.Test
-
-import scala.collection.mutable.ListBuffer
+import java.net.URI
+import scala.io.{BufferedSource, Source}
 
 
 class MyTest {
@@ -66,6 +64,22 @@ class MyTest {
     output.show(false)
     assert(expectedOutput.schema.equals(output.schema))
     assert(expectedOutput.collect().sameElements(output.collect()))
+
+  }
+
+  @Test
+  def loadConfThroughHadoopLibrary(): Unit = {
+
+    val cfgFile: String = "src/test/resources/testSpooqConf.conf"
+    val fs: FileSystem = FileSystem.get(new URI(cfgFile), new Configuration())
+    val inputStream: FSDataInputStream = fs.open(new Path(cfgFile))
+    val inputResult : String = Source.fromInputStream(inputStream).takeWhile(_ != null).mkString
+    val outputStream: BufferedSource = Source.fromFile(cfgFile)
+    val expectedOutput: String = outputStream.mkString
+    outputStream.close()
+    assert(inputResult.equals(expectedOutput))
+
+
 
   }
 }
