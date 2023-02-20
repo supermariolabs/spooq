@@ -15,6 +15,7 @@ class ApplicationConfiguration(arguments: Seq[String]) extends ScallopConf(argum
   val thriftServer = opt[Boolean](required = true, default = Some(false))
   val thriftPort = opt[String](required = false)
   val enableGeo = opt[Boolean](required = false, default = Some(false))
+  val params = props[String]('P')
 
   verify()
 }

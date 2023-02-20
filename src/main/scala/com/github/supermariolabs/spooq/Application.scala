@@ -22,10 +22,11 @@ import collection.JavaConverters._
 object Application {
   val logger = LoggerFactory.getLogger(this.getClass)
   var ansi: AnsiCodes = _
+  var conf: ApplicationConfiguration = _
 
   def main(args: Array[String]): Unit = {
     Try {
-      val conf = new ApplicationConfiguration(args)
+      conf = new ApplicationConfiguration(args)
       ansi = new AnsiCodes(conf.rich.getOrElse(false))
 
       run(conf)
@@ -179,6 +180,8 @@ object Application {
     Try {
       val env = System.getenv()
       val sys = System.getProperties
+      val params = new util.HashMap[String,String]
+      this.conf.params.foreach(x => params.put(x._1,x._2))
 
       val cfg = new freemarker.template.Configuration(freemarker.template.Configuration.VERSION_2_3_0)
       cfg.setInterpolationSyntax(freemarker.template.Configuration.DOLLAR_INTERPOLATION_SYNTAX)
@@ -188,6 +191,7 @@ object Application {
       val model = new util.HashMap[String,Object]()
       model.put("env",env)
       model.put("sys",sys)
+      model.put("params",params)
 
       val t = new freemarker.template.Template("spooq", new StringReader(in), cfg);
 
