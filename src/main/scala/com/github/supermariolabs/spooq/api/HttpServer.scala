@@ -128,6 +128,23 @@ class HttpServer(engine: Engine)(implicit spark: SparkSession) {
     })
 
     /**
+     * Request Example: curl -X GET localhost:4242/dropTable/dataframeName
+     */
+    Spark.get("/dropTable/:name", (req: Request, res: Response) => {
+      val id = req.params(":name")
+      val isDeleted = engine.dataFrames.get(id) match {
+        case Some(df) =>
+          spark.catalog.dropTempView(id)
+        case None =>
+          res.status(404)
+          "error"
+      }
+      s"""{"id":"$id", "res":[httpStatus: ${res.status()}, deleted: $isDeleted]}"""
+    })
+
+    spark.catalog.dropTempView("df")
+
+    /**
      * Request Example: curl -X GET localhost:4242/cache/dataframeName
      */
     Spark.get("/cache/:name", (req: Request, res: Response) => {
