@@ -128,9 +128,9 @@ class HttpServer(engine: Engine)(implicit spark: SparkSession) {
     })
 
     /**
-     * Request Example: curl -X GET localhost:4242/dropTable/dataframeName
+     * Request Example: curl -X DELETE localhost:4242/step/dataframeName
      */
-    Spark.get("/dropTable/:name", (req: Request, res: Response) => {
+    Spark.delete("/step/:name", (req: Request, res: Response) => {
       val id = req.params(":name")
       val isDeleted = engine.dataFrames.get(id) match {
         case Some(df) =>
