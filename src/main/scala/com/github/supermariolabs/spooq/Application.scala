@@ -9,7 +9,7 @@ import com.github.supermariolabs.spooq.logging.JobUtils
 import com.github.supermariolabs.spooq.model.{EngineOut, Job}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FSDataInputStream, FileSystem, Path}
-
+import org.datasyslab
 import java.io.{StringReader, StringWriter}
 import java.net.URI
 import java.util

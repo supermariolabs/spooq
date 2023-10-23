@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory
 class SampleStep extends SimpleStep {
   val logger = LoggerFactory.getLogger(this.getClass)
 
-  override def run(dfMap: Map[String, DataFrame], varMap: Map[String, Any]): DataFrame = {
+  override def run(dfMap: Map[String, DataFrame], varMap: Map[String, Any], args : Map[String,String]): DataFrame = {
     val spark = SparkSession.getActiveSession.get
 
     dfMap.foreach(dfEntry => {
