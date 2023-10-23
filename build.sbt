@@ -79,6 +79,7 @@ libraryDependencies ++= avroDeps
 libraryDependencies ++= geoDeps
 libraryDependencies ++= mongoDeps
 libraryDependencies += "junit" % "junit" % "4.13.2" % Test
+libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.14" % Test
 
 assembly / mainClass := Some("com.github.supermariolabs.spooq.Application")
 assemblyJarName := s"${name.value}-${version.value}-spark${sparkVersion}_${scalaVersion.value}${if (standalone) "-standalone" else ""}.jar"
