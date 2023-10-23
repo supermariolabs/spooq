@@ -162,6 +162,9 @@ class HttpServer(engine: Engine)(implicit spark: SparkSession) {
       s"""{"id":"$id", "res":[httpStatus: ${res.status()}, isCached: $isCached]}"""
     })
 
+    /**
+     * Request Example: curl -X POST localhost:4242/step
+     */
     Spark.post("/step", (req: Request, res: Response) => {
       //implicit val stepDecoder: Decoder[Step] = deriveDecoder[Step]
       val decodedStep = decode[Step](req.body())

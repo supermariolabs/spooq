@@ -35,3 +35,4 @@ myOut/
 www/
 assembly.sh
 assemblyAll.sh
+.jython_cache/

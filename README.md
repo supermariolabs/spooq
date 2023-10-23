@@ -12,9 +12,10 @@
    1. [Configuration Overview](#referencedoc1)
    2. [Steps Kind](#referencedoc2)
    3. [Launch Parameters](#referencedoc3)
-9. [Download](#download)
-10. [How to compile the code](howtocompile)
-11. [Cookbook](#cookbook)
+9. [Rest API](#restapi)
+10. [Download](#download)
+11. [How to compile the code](howtocompile)
+12. [Cookbook](#cookbook)
 
 ## Overview <a id="overview"></a>
 Spooq is an ETL Big Data tool based on the Apache Spark framework that simplifies its use through the ability to implement data pipelines using a declarative approach based on simple configuration files and expressing transformations primarily through SQL.
@@ -725,6 +726,64 @@ The command parameters supported by the application are:
 - `-tp` or `--thrift-port` (**experimental**) allows you to bind the thrift-server to a different port
 - `-v` or `--verbose` verbose mode
 - `-r` or `--rich` whether or not to use the rich ui (ansi) cli
+
+## Rest API <a id="restapi"></a>
+You can interact with spooq also with rest api (remember to pass --http option when tou launch spooq):
+Example:
+```bash
+./spooq/bin/spooq -c 'spooq/conf/example.conf' --http
+```
+Below are all the Rest APIs, with examples of how to call them  (4242 is the default port the service is listening to):
+
+### Add a step
+```bash
+curl -X POST localhost:4242/step
+```
+
+request body (json):
+```json
+{
+      "id":"orders_spooq",
+      "desc":"load orders_spooq.csv file",
+      "kind":"input",
+      "format":"csv",
+      "options": {
+         "header":"true"
+      },
+      "path":"s3a://test/poc/orders_spooq.csv",
+      "cache":true
+}
+```
+
+### Cache a dataframe
+```bash
+curl -X GET localhost:4242/cache/{dataframeName}
+```
+
+path variable:
+```bash
+dataframeName: name of the dataframe you want to cache
+```
+
+### Unpersist a dataframe
+```bash
+curl -X GET localhost:4242/unpersist/{dataframeName}
+```
+
+path variable:
+```bash
+dataframeName: name of the dataframe you want to unpersist
+```
+
+### Delete a dataframe
+```bash
+curl -X DELETE localhost:4242/step/{dataframeName}
+```
+
+path variable:
+```bash
+dataframeName: name of the dataframe you want to delete
+```
 
 ## Download <a id="download"></a>
 [Spooq 0.9.9beta Spark3 (scala 2.12)](https://drive.google.com/file/d/1y57-YBmEyfLhxI2Rw4Rh3QOBeLAiOcah/view?usp=sharing)
