@@ -12,13 +12,17 @@ import com.github.supermariolabs.spooq.shell.Repl
 import com.github.supermariolabs.spooq.streaming.{SimpleForeachBatchProcessor, SimpleForeachProcessor}
 import com.github.supermariolabs.spooq.udf.SimpleUDF
 import com.github.supermariolabs.spooq.udf.hbase.HBaseEnrichRow
+import org.apache.http.client.methods.HttpGet
+import org.apache.http.impl.client.HttpClients
+import org.apache.http.util.EntityUtils
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.hive.thriftserver.HiveThriftServer2
 import org.apache.spark.sql.streaming.Trigger
 import org.apache.spark.sql.types.{MapType, StringType}
-import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession, avro}
+import org.apache.spark.sql.{DataFrame, Dataset, Encoders, Row, SparkSession, avro}
 import org.slf4j.LoggerFactory
+import scalaj.http.Http
 import za.co.absa.abris.avro.functions
 import za.co.absa.abris.config.AbrisConfig
 
@@ -235,7 +239,39 @@ class Engine(providedConf: ApplicationConfiguration) {
     var df = spark.emptyDataFrame
 
     in.path match {
-      case Some(path) => df = reader.load(path)
+      case Some(path) => {
+        if(path.startsWith("http")){
+          if (in.format.get == "json")
+          {
+            val httpClient = HttpClients.createDefault()
+            val httpGet = new HttpGet(path)
+            val response = httpClient.execute(httpGet)
+            val entity = response.getEntity
+            val data = EntityUtils.toString(entity)
+            val stringDS = spark.createDataset(data.split("\n"))(Encoders.STRING)
+            df = spark.read
+              .option("multiline", "true")
+              .option("header", "true")
+              .json(stringDS)
+          }
+          else if (in.format.get == "csv")
+          {
+            val httpClient = HttpClients.createDefault()
+            val httpGet = new HttpGet(path)
+            val response = httpClient.execute(httpGet)
+            val entity = response.getEntity
+            val data = EntityUtils.toString(entity)
+            val stringDS = spark.createDataset(data.split("\n"))(Encoders.STRING)
+            df = spark.read
+              .option("inferSchema", "true")
+              .option("header", "true")
+              .csv(stringDS)
+          }
+        }
+        else {
+          df = reader.load(path)
+        }
+      }
       case None => df = reader.load
     }
 
@@ -559,7 +595,7 @@ class Engine(providedConf: ApplicationConfiguration) {
     val className = custom.claz.get
     val claz = Class.forName(className).newInstance.asInstanceOf[SimpleStep]
 
-    var df = claz.run(dataFrames.toMap, variables.asScala.toMap)
+    var df = claz.run(dataFrames.toMap, variables.asScala.toMap, conf.params)
 
     custom.cache.foreach(cacheDefined => {
       if (cacheDefined) {
@@ -809,7 +845,9 @@ class Engine(providedConf: ApplicationConfiguration) {
 
   def processUdf(udf: Step)(implicit spark: SparkSession): ProcessingOutput = {
     val className = udf.claz.get
-    val claz = Class.forName(className).getConstructors.last.newInstance(udf.options.getOrElse(Map.empty[String,String])).asInstanceOf[SimpleUDF]
+    logger.info("LOG UDF ERROR +++ "+Class.forName(className).getConstructors.last)
+    println("LOG UDF ERROR +++ "+Class.forName(className).getConstructors.last)
+    val claz = Class.forName(className).getConstructors.last.newInstance().asInstanceOf[SimpleUDF]
     spark.udf.register(udf.id, claz.udf)
 
     ProcessingOutput(udf, List.empty[LogEntry], None, true)

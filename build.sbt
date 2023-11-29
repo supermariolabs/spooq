@@ -2,6 +2,7 @@ import java.io.PrintWriter
 import scala.io.Source
 import scala.util.Try
 
+
 logLevel := Level.Error
 
 name := "Spooq"
@@ -16,7 +17,7 @@ addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.fu
 javacOptions ++= Seq("-source", "8", "-target", "8")
 
 val spark2Version = "2.4.0"
-val spark3Version = "3.3.0"
+val spark3Version = "3.4.1"
 val sparkVersion = (if (buildType=="3") spark3Version else spark2Version)
 
 lazy val configString = settingKey[String]("dump").withRank(KeyRanks.Invisible)
@@ -45,11 +46,15 @@ val commonDeps = Seq(
   "com.github.javafaker" % "javafaker" % "1.0.2",
   "org.apache.hbase" % "hbase-common" % "2.2.0" % "provided" intransitive,
   "org.apache.hbase" % "hbase-client" % "2.2.0" % "provided" intransitive,
+  "io.delta" %% "delta-core" % "2.3.0" % "provided",
   "org.python" % "jython-standalone" % "2.7.3",
   "com.sparkjava" % "spark-core" % "2.9.4",
   "org.scala-lang" % "scala-compiler" % "2.12.16",
+  "org.scalaj" %% "scalaj-http" % "2.4.2",
   // https://mvnrepository.com/artifact/com.lihaoyi/ammonite
-  "com.lihaoyi" % "ammonite" % "2.5.5" cross CrossVersion.full
+  "com.lihaoyi" % "ammonite" % "2.5.5" cross CrossVersion.full,
+  "com.typesafe" % "config" % "1.4.2",
+  "org.ini4j" % "ini4j" % "0.5.4",
 )
 
 val avroDeps = Seq(
@@ -57,11 +62,15 @@ val avroDeps = Seq(
 )
 
 val geoDeps = Seq(
-  "org.apache.sedona" %% "sedona-python-adapter-3.0" % "1.2.1-incubating" % "provided",
-)
+  "org.apache.sedona" %% "sedona-python-adapter-3.0" % "1.4.0" ,
+  "org.datasyslab" % "geotools-wrapper" % "1.4.0-28.2",
+  "org.locationtech.jts" % "jts-core" % "1.19.0",
 
+)
 val mongoDeps = Seq(
   "org.mongodb" % "mongo-java-driver" % "3.12.11" % "provided",
+  "org.mongodb.scala" %% "mongo-scala-driver" % "4.8.1",
+  "org.mongodb.spark" %% "mongo-spark-connector" % "10.1.1",
 )
 
 Compile / unmanagedSourceDirectories += {
@@ -76,10 +85,20 @@ resolvers += "Confluent" at "https://packages.confluent.io/maven/"
 libraryDependencies ++= (if (standalone) sparkDeps else sparkDeps.map(dep => dep % Provided))
 libraryDependencies ++= commonDeps
 libraryDependencies ++= avroDeps
-libraryDependencies ++= geoDeps
 libraryDependencies ++= mongoDeps
+libraryDependencies ++= (if (standalone) geoDeps else geoDeps.map(dep => dep % Provided))
 libraryDependencies += "junit" % "junit" % "4.13.2" % Test
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.14" % Test
+
+
+
+
+filterScalaLibrary := false // include scala library in output
+
+dependencyDotFile := file("dependencies.dot") //render dot file to `./dependencies.dot`
+
+
+
 
 assembly / mainClass := Some("com.github.supermariolabs.spooq.Application")
 assemblyJarName := s"${name.value}-${version.value}-spark${sparkVersion}_${scalaVersion.value}${if (standalone) "-standalone" else ""}.jar"
