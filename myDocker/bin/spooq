@@ -1,0 +1,49 @@
+#!/bin/bash
+source $SPOOQ_HOME/bin/loadenv
+
+#echo "DEBUG\n--------"
+#ls -l -R
+#echo "--------"
+
+JAR=$SPOOQ_HOME/lib/spooq.jar
+MAIN=com.github.supermariolabs.spooq.Application
+
+# Example
+#SPOOQ_PACKAGES=org.postgresql:postgresql:42.4.0
+
+if [ -n "$SPOOQ_PACKAGES" ]
+then
+    echo "PACKAGES_CMD=--packages $SPOOQ_PACKAGES"
+    PACKAGES_CMD="--packages $SPOOQ_PACKAGES"
+else
+    PACKAGES_CMD=
+fi
+
+ARGS="$@"
+
+if [ -z "$JAVA_HOME" ]
+then
+    echo "JAVA_HOME not defined!"
+else
+    echo "Using JAVA_HOME=$JAVA_HOME"
+fi
+
+if [ -z "$SPARK_HOME" ]
+then
+    echo "SPARK_HOME not defined!"
+else 
+    echo "Using SPARK_HOME=$SPARK_HOME"
+    echo "using 2Ge"
+    $SPARK_HOME/bin/spark-submit \
+	--class $MAIN \
+	--master local[*] \
+	--conf spark.executor.extraJavaOptions=-Dlog4j.configurationFile=$SPOOQ_HOME/log4j2.properties \
+	--conf spark.driver.extraJavaOptions=-Dlog4j.configurationFile=$SPOOQ_HOME/log4j2.properties \
+    --conf spark.sql.catalogImplementation=hive \
+    --conf spark.driver.memory=3G \
+    --conf spark.executor.memory=3G \
+    --jars jars/udfspooq_2.13-0.1.0-SNAPSHOT.jar \
+    $PACKAGES_CMD \
+	$JAR \
+	$ARGS
+fi

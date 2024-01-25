@@ -1,0 +1,6 @@
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+JAVA_HOME=/opt/java/openjdk
+#JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-8.jdk/Contents/Home/
+SPARK_HOME=/opt/spark-3.3.1-bin-hadoop3
+#SPARK_HOME=/Users/antoniomonciino/spark-3.3.0-bin-hadoop3

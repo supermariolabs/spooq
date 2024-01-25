@@ -67,7 +67,7 @@ class Engine(conf: ApplicationConfiguration) {
     if (conf.thriftServer.getOrElse(false)) {
       sparkSessionBuilder.config("spark.sql.hive.thriftServer.singleSession", "true")
       sparkSessionBuilder.config("hive.server2.thrift.port", conf.thriftPort.getOrElse("10001"))
-      sparkSessionBuilder.config("javax.jdo.option.ConnectionURL", "jdbc:derby:;databaseName=metastore_db2;create=true").enableHiveSupport()
+      //sparkSessionBuilder.config("javax.jdo.option.ConnectionURL", "jdbc:derby:;databaseName=metastore_db2;create=true").enableHiveSupport()
     }
 
     implicit val spark = sparkSessionBuilder.getOrCreate()
