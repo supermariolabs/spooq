@@ -3,7 +3,7 @@ package com.github.supermariolabs.spooq
 import com.github.supermariolabs.spooq.ansi.AnsiCodes
 import com.github.supermariolabs.spooq.api.{HttpServer, SqlRequest}
 import com.github.supermariolabs.spooq.conf.ApplicationConfiguration
-import com.github.supermariolabs.spooq.etl.SimpleStep
+import com.github.supermariolabs.spooq.etl.{CustomInputStep, SimpleStep}
 import com.github.supermariolabs.spooq.logging.{CommonUtils, SparkUtils}
 import com.github.supermariolabs.spooq.metrics.{LoggerListener, QueryLoggerListener}
 import com.github.supermariolabs.spooq.misc.Utils
@@ -55,6 +55,7 @@ class Engine(providedConf: ApplicationConfiguration) {
     "script",
     "script-v2",
     "custom",
+    "customInput",
     "avro-serde",
     "udf",
     "output",
@@ -79,7 +80,7 @@ class Engine(providedConf: ApplicationConfiguration) {
     if (conf.thriftServer.getOrElse(false)) {
       sparkSessionBuilder.config("spark.sql.hive.thriftServer.singleSession", "true")
       sparkSessionBuilder.config("hive.server2.thrift.port", conf.thriftPort.getOrElse("10001"))
-      sparkSessionBuilder.config("javax.jdo.option.ConnectionURL", "jdbc:derby:;databaseName=metastore_db2;create=true").enableHiveSupport()
+      //sparkSessionBuilder.config("javax.jdo.option.ConnectionURL", "jdbc:derby:;databaseName=metastore_db2;create=true").enableHiveSupport()
     }
 
     implicit val spark = sparkSessionBuilder.getOrCreate()
@@ -240,9 +241,8 @@ class Engine(providedConf: ApplicationConfiguration) {
 
     in.path match {
       case Some(path) => {
-        if(path.startsWith("http")){
-          if (in.format.get == "json")
-          {
+        if (path.startsWith("http")) {
+          if (in.format.get == "json") {
             val httpClient = HttpClients.createSystem()
             val httpGet = new HttpGet(path)
             val response = httpClient.execute(httpGet)
@@ -254,8 +254,7 @@ class Engine(providedConf: ApplicationConfiguration) {
               .option("header", "true")
               .json(stringDS)
           }
-          else if (in.format.get == "csv")
-          {
+          else if (in.format.get == "csv") {
             val httpClient = HttpClients.createSystem()
             val httpGet = new HttpGet(path)
             val response = httpClient.execute(httpGet)
@@ -416,7 +415,7 @@ class Engine(providedConf: ApplicationConfiguration) {
     ammonite.Main(predefCode =
       s"""
          |logger.info("+++ INSIDE SCRIPT spark.version="+spark.version)
-         |""".stripMargin).run("logger"->logger,"spark"->spark)
+         |""".stripMargin).run("logger" -> logger, "spark" -> spark)
 
     ProcessingOutput(script, List.empty[LogEntry], None, true)
   }
@@ -596,6 +595,29 @@ class Engine(providedConf: ApplicationConfiguration) {
     val claz = Class.forName(className).newInstance.asInstanceOf[SimpleStep]
 
     var df = claz.run(dataFrames.toMap, variables.asScala.toMap, conf.params)
+
+    custom.cache.foreach(cacheDefined => {
+      if (cacheDefined) {
+        logger.info(s"${ansi.YELLOW}Caching data${ansi.RESET}")
+        df = df.cache
+      }
+    })
+
+    dataFrames.put(custom.id, df)
+    df.createOrReplaceTempView(custom.id)
+
+    custom.show.foreach(showDefined => {
+      if (showDefined) logger.info(s"${ansi.CYAN}SAMPLE DATA${ansi.RESET}\n${SparkUtils.dfAsString(df)}")
+    })
+
+    ProcessingOutput(custom, List.empty[LogEntry], None, true)
+  }
+
+  def processCustomInput(custom: Step)(implicit spark: SparkSession): ProcessingOutput = {
+    val className = custom.claz.get
+    val claz = Class.forName(className).newInstance.asInstanceOf[CustomInputStep]
+
+    var df = claz.run(dataFrames.toMap, variables.asScala.toMap, conf.params, custom)
 
     custom.cache.foreach(cacheDefined => {
       if (cacheDefined) {
@@ -845,8 +867,8 @@ class Engine(providedConf: ApplicationConfiguration) {
 
   def processUdf(udf: Step)(implicit spark: SparkSession): ProcessingOutput = {
     val className = udf.claz.get
-    logger.info("LOG UDF ERROR +++ "+Class.forName(className).getConstructors.last)
-    println("LOG UDF ERROR +++ "+Class.forName(className).getConstructors.last)
+    logger.info("LOG UDF ERROR +++ " + Class.forName(className).getConstructors.last)
+    println("LOG UDF ERROR +++ " + Class.forName(className).getConstructors.last)
     val claz = Class.forName(className).getConstructors.last.newInstance().asInstanceOf[SimpleUDF]
     spark.udf.register(udf.id, claz.udf)
 

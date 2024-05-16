@@ -73,6 +73,14 @@ val mongoDeps = Seq(
   "org.mongodb.spark" %% "mongo-spark-connector" % "10.1.1",
 )
 
+val mssqlDeps = Seq(
+  "com.microsoft.azure" %% "spark-mssql-connector" % "1.2.0" % "provided"
+)
+
+val oracleDeps = Seq(
+  "com.oracle.database.jdbc" % "ojdbc6" % "11.2.0.4" % "provided"
+)
+
 Compile / unmanagedSourceDirectories += {
   baseDirectory.value / s"src/main/scala_${scalaVersion.value.substring(0,4)}"
 }
@@ -86,6 +94,8 @@ libraryDependencies ++= (if (standalone) sparkDeps else sparkDeps.map(dep => dep
 libraryDependencies ++= commonDeps
 libraryDependencies ++= avroDeps
 libraryDependencies ++= mongoDeps
+libraryDependencies ++= mssqlDeps
+libraryDependencies ++= oracleDeps
 libraryDependencies ++= (if (standalone) geoDeps else geoDeps.map(dep => dep % Provided))
 libraryDependencies += "junit" % "junit" % "4.13.2" % Test
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.14" % Test

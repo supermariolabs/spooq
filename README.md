@@ -380,6 +380,51 @@ steps = [
    }
 ]
 ```
+#### customInput
+A step with kind `customInput` creates a dataframe and the corresponding _temporary view_ executing custom code defined in a class that extends the `customInputStep` trait:
+```scala
+package com.github.supermariolabs.spooq.etl
+
+import com.github.supermariolabs.spooq.model.Step
+import org.apache.spark.sql.DataFrame
+
+trait CustomInputStep extends Serializable {
+  def run(dfMap: Map[String, DataFrame], variables: Map[String, Any], args : Map[String,String], customInputStep : Step): DataFrame
+}
+
+```
+
+- `format` data source format
+- `options` data source options
+- `schema` schema in Spark SQL DDL format
+- `path` data source path (optional)
+- `claz` class name including package
+- `cache` whether to apply dataframe caching (N.B. lazy as default on Spark)
+- `show` whether to display a diagnostic dataframe data sample
+
+In our example we developed a custom input step that reads from api response json authenticated by Oauth (experimental):
+```hocon
+steps = [
+{
+    id = exampleRestSource
+    shortDesc = "load a json response from a REST api"
+    kind = customInput
+    format = json
+    options = {
+        api_rest_authentication_body = "{\"client_id\": \"12345678\",\"client_secret\": \"12345678\",\"grant_type\": \"client_credentials\"}",
+        api_rest_method = "POST",
+        multiline = "true",
+        header = "true",
+        api_rest_body = "{\"flowDate\": \"2022-04-04\",\"hours\": [14,15],\"zones\": [\"CNOR\",\"CSUD\"],\"statuses\": [\"null\",\"REP\",\"SENT_OK\"]}",
+        api_rest_authentication_host = "https://exampleHost.com/oauth/token"
+    }
+    claz = com.github.supermariolabs.spooq.etl.RestApiStep
+    path = "https://exampleHostToDoTheCallTo.com/examplePath"
+    cache = true
+    show = true
+},
+#...
+```
 #### input-stream
 A step with kind `input-stream` loads a (streaming) `DataFrame` starting from a data source natively supported by Spark or using a third-party connector. The feature uses [Spark's Structured Streaming](https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html) API.
 
