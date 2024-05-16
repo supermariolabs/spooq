@@ -16,6 +16,23 @@ import scala.io.{BufferedSource, Source}
 class MyTest {
 
   @Test
+  def test1(): Unit = {
+    val spark = SparkSession.builder.appName("Test").master("local[*]").getOrCreate()
+
+    val df = spark.read
+      .format("com.microsoft.sqlserver.jdbc.spark")
+      .option("url", "jdbc:sqlserver://;serverName=localhost;databaseName=master")
+      .option("dbtable", "Consultation_Slot")
+      .option("user", "sa")
+      .option("password", "Pass@word")
+      .load()
+
+    df.printSchema()
+
+    df.show()
+  }
+
+  @Test
   def test(): Unit = {
     import io.circe._
     //import io.circe.generic.semiauto._
