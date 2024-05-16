@@ -418,6 +418,7 @@ steps = [
         api_rest_body = "{\"flowDate\": \"2022-04-04\",\"hours\": [14,15],\"zones\": [\"CNOR\",\"CSUD\"],\"statuses\": [\"null\",\"REP\",\"SENT_OK\"]}",
         api_rest_authentication_host = "https://exampleHost.com/oauth/token"
     }
+    claz = com.github.supermariolabs.spooq.etl.RestApiStep
     path = "https://exampleHostToDoTheCallTo.com/examplePath"
     cache = true
     show = true
