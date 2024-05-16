@@ -243,7 +243,7 @@ class Engine(providedConf: ApplicationConfiguration) {
       case Some(path) => {
         if (path.startsWith("http")) {
           if (in.format.get == "json") {
-            val httpClient = HttpClients.createDefault()
+            val httpClient = HttpClients.createSystem()
             val httpGet = new HttpGet(path)
             val response = httpClient.execute(httpGet)
             val entity = response.getEntity
@@ -255,7 +255,7 @@ class Engine(providedConf: ApplicationConfiguration) {
               .json(stringDS)
           }
           else if (in.format.get == "csv") {
-            val httpClient = HttpClients.createDefault()
+            val httpClient = HttpClients.createSystem()
             val httpGet = new HttpGet(path)
             val response = httpClient.execute(httpGet)
             val entity = response.getEntity
