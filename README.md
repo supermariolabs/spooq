@@ -343,6 +343,7 @@ The properties supported by this type of block (in addition to the common ones `
 - `path` data source path (optional)
 - `cache` whether to apply dataframe caching (N.B. lazy as default on Spark)
 - `show` whether to display a diagnostic dataframe data sample
+- `isGlobal` whether to create a global temp view instead a normal temp view (deafault is false)
 
 Examples:
 ```hocon
@@ -401,6 +402,7 @@ trait CustomInputStep extends Serializable {
 - `claz` class name including package
 - `cache` whether to apply dataframe caching (N.B. lazy as default on Spark)
 - `show` whether to display a diagnostic dataframe data sample
+- `isGlobal` whether to create a global temp view instead a normal temp view (deafault is false)
 
 In our example we developed a custom input step that reads from api response json authenticated by Oauth (experimental):
 ```hocon
