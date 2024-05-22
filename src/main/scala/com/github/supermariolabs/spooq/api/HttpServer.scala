@@ -12,7 +12,7 @@ import io.circe.generic.auto._
 import io.circe.parser._
 import io.circe.syntax._
 import org.apache.spark.sql.SparkSession
-import scala.util.{Try,Success,Failure}
+import scala.util.{Try, Success, Failure}
 
 import scala.io.Source
 
@@ -134,7 +134,18 @@ class HttpServer(engine: Engine)(implicit spark: SparkSession) {
       val id = req.params(":name")
       val isDeleted = engine.dataFrames.get(id) match {
         case Some(df) =>
-          spark.catalog.dropTempView(id)
+          val isGlobalTempView = try {
+            spark.sql(s"SELECT * FROM global_temp.$id LIMIT 1")
+            Success()
+          } catch {
+            case e: NoSuchMethodError => Failure(e)
+            case e: Throwable => Failure(e)
+          }
+
+          isGlobalTempView match {
+            case Success(_) => spark.catalog.dropGlobalTempView(id)
+            case Failure(_) => spark.catalog.dropTempView(id)
+          }
         case None =>
           res.status(404)
           "error"
