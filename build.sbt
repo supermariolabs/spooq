@@ -31,6 +31,7 @@ val sparkDeps = Seq(
   "org.apache.spark" %% "spark-hive-thriftserver" % sparkVersion,
   "org.apache.spark" %% "spark-unsafe" % sparkVersion,
   "org.apache.spark" %% "spark-catalyst" % sparkVersion,
+  "org.apache.spark" %% "spark-connect" % sparkVersion
 )
 
 val commonDeps = Seq(
@@ -48,7 +49,7 @@ val commonDeps = Seq(
   "org.apache.hbase" % "hbase-client" % "2.2.0" % "provided" intransitive,
   "io.delta" %% "delta-core" % "2.3.0" % "provided",
   "org.python" % "jython-standalone" % "2.7.3",
-  "com.sparkjava" % "spark-core" % "2.9.4",
+  "com.sparkjava" % "spark-core" % "2.9.3",
   "org.scala-lang" % "scala-compiler" % "2.12.16",
   "org.scalaj" %% "scalaj-http" % "2.4.2",
   // https://mvnrepository.com/artifact/com.lihaoyi/ammonite

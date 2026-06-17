@@ -36,3 +36,8 @@ www/
 assembly.sh
 assemblyAll.sh
 .jython_cache/
+
+#localdocker
+myDocker/
+Dockerfile
+start.sh

@@ -307,7 +307,10 @@ class Engine(providedConf: ApplicationConfiguration) {
     })
 
     dataFrames.put(in.id, df)
-    df.createOrReplaceTempView(in.id)
+    if(in.isGlobal.getOrElse(false))
+      df.createOrReplaceGlobalTempView(in.id)
+    else
+      df.createOrReplaceTempView(in.id)
 
     in.show.foreach(showDefined => {
       if (showDefined) logger.info(s"${ansi.CYAN}SAMPLE DATA${ansi.RESET}\n${SparkUtils.dfAsString(df)}")
@@ -337,7 +340,10 @@ class Engine(providedConf: ApplicationConfiguration) {
     }
 
     dataFrames.put(in.id, df)
-    df.createOrReplaceTempView(in.id)
+    if(in.isGlobal.getOrElse(false))
+      df.createOrReplaceGlobalTempView(in.id)
+    else
+      df.createOrReplaceTempView(in.id)
 
     in.show.foreach(showDefined => {
       if (showDefined) df.writeStream
@@ -376,7 +382,10 @@ class Engine(providedConf: ApplicationConfiguration) {
     })
 
     dataFrames.put(trx.id, df)
-    df.createOrReplaceTempView(trx.id)
+    if(trx.isGlobal.getOrElse(false))
+      df.createOrReplaceGlobalTempView(trx.id)
+    else
+      df.createOrReplaceTempView(trx.id)
 
     trx.show.foreach(showDefined => {
       if (showDefined) logger.info(s"${ansi.CYAN}SAMPLE DATA${ansi.RESET}\n${SparkUtils.dfAsString(df)}")
@@ -452,7 +461,10 @@ class Engine(providedConf: ApplicationConfiguration) {
           ret match {
             case df: DataFrame => {
               dataFrames.put(script.id, df)
-              df.createOrReplaceTempView(script.id)
+              if(script.isGlobal.getOrElse(false))
+                df.createOrReplaceGlobalTempView(script.id)
+              else
+                df.createOrReplaceTempView(script.id)
             }
             case _ => logger.error(s"Wrong script return format (${ret.getClass.getName})")
           }
@@ -472,7 +484,10 @@ class Engine(providedConf: ApplicationConfiguration) {
           ret match {
             case df: DataFrame => {
               dataFrames.put(script.id, df)
-              df.createOrReplaceTempView(script.id)
+              if(script.isGlobal.getOrElse(false))
+                df.createOrReplaceGlobalTempView(script.id)
+              else
+                df.createOrReplaceTempView(script.id)
             }
             case _ => logger.error(s"Wrong script return format (${ret.getClass.getName})")
           }
@@ -604,7 +619,10 @@ class Engine(providedConf: ApplicationConfiguration) {
     })
 
     dataFrames.put(custom.id, df)
-    df.createOrReplaceTempView(custom.id)
+    if(custom.isGlobal.getOrElse(false))
+      df.createOrReplaceGlobalTempView(custom.id)
+    else
+      df.createOrReplaceTempView(custom.id)
 
     custom.show.foreach(showDefined => {
       if (showDefined) logger.info(s"${ansi.CYAN}SAMPLE DATA${ansi.RESET}\n${SparkUtils.dfAsString(df)}")
@@ -627,7 +645,10 @@ class Engine(providedConf: ApplicationConfiguration) {
     })
 
     dataFrames.put(custom.id, df)
-    df.createOrReplaceTempView(custom.id)
+    if(custom.isGlobal.getOrElse(false))
+      df.createOrReplaceGlobalTempView(custom.id)
+    else
+      df.createOrReplaceTempView(custom.id)
 
     custom.show.foreach(showDefined => {
       if (showDefined) logger.info(s"${ansi.CYAN}SAMPLE DATA${ansi.RESET}\n${SparkUtils.dfAsString(df)}")
@@ -860,7 +881,10 @@ class Engine(providedConf: ApplicationConfiguration) {
 
 
     dataFrames.put(serde.id, df)
-    df.createOrReplaceTempView(serde.id)
+    if(serde.isGlobal.getOrElse(false))
+      df.createOrReplaceGlobalTempView(serde.id)
+    else
+      df.createOrReplaceTempView(serde.id)
 
     ProcessingOutput(serde, List.empty[LogEntry], None, true)
   }
@@ -900,7 +924,10 @@ class Engine(providedConf: ApplicationConfiguration) {
     })
 
     dataFrames.put(in.id, out)
-    out.createOrReplaceTempView(in.id)
+    if(in.isGlobal.getOrElse(false))
+      out.createOrReplaceGlobalTempView(in.id)
+    else
+      out.createOrReplaceTempView(in.id)
 
     in.show.foreach(showDefined => {
       if (showDefined) logger.info(s"${ansi.CYAN}SAMPLE DATA${ansi.RESET}\n${SparkUtils.dfAsString(df)}")
